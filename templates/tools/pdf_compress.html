@@ -43,26 +43,20 @@
 // Quality slider
 const slider = document.getElementById('qualitySlider');
 const label = document.getElementById('qualityLabel');
-const labels = {
-    0:  "0% — Lossless (300dpi)",
-    10: "10% — Near-Lossless",
-    25: "25% — High Quality",
-    50: "50% — Balanced",
-    60: "60% — Good Compression",
-    75: "75% — High Compression",
-    85: "85% — Maximum (72dpi)",
-    100: "100% — Smallest File"
-};
+
+function getLabel(val) {
+    if (val <= 5)   return `${val}% — Lossless (300dpi)`;
+    if (val <= 25)  return `${val}% — Near-Lossless`;
+    if (val <= 45)  return `${val}% — High Quality`;
+    if (val <= 55)  return `${val}% — Balanced`;
+    if (val <= 70)  return `${val}% — Good Compression`;
+    if (val <= 85)  return `${val}% — High Compression`;
+    if (val <= 95)  return `${val}% — Maximum (72dpi)`;
+    return `${val}% — Smallest File`;
+}
 
 function updateLabel(val) {
-    // Find closest label key
-    const keys = Object.keys(labels).map(Number).sort((a,b) => a-b);
-    let best = keys[0];
-    for (const k of keys) {
-        if (val >= k) best = k;
-    }
-    label.textContent = labels[best] || `${val}%`;
-    // Color coding
+    label.textContent = getLabel(val);
     if (val < 30) label.className = 'text-sm font-bold text-green-600';
     else if (val < 70) label.className = 'text-sm font-bold text-brand-600';
     else label.className = 'text-sm font-bold text-orange-500';
