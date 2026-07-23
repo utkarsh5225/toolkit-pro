@@ -6,15 +6,20 @@ def parse_page_ranges(pages_str: str, total_pages: int) -> list[int]:
     pages = set()
     for part in pages_str.split(","):
         part = part.strip()
+        if not part:
+            continue
         if "-" in part:
             start, end = part.split("-", 1)
             for p in range(int(start), int(end) + 1):
                 if 1 <= p <= total_pages:
                     pages.add(p - 1)
         else:
-            p = int(part)
-            if 1 <= p <= total_pages:
-                pages.add(p - 1)
+            try:
+                p = int(part)
+                if 1 <= p <= total_pages:
+                    pages.add(p - 1)
+            except ValueError:
+                continue
     return sorted(pages)
 
 def split_pdf(data: bytes, pages_str: str) -> bytes | None:
