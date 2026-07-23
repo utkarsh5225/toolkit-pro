@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — ToolKit Pro{% endblock %}
+
+{% block content %}
+<section class="max-w-4xl mx-auto px-4 pt-8 pb-16">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+            <p class="text-gray-500 text-sm mt-1">{{ current_user.email }}</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-sm px-3 py-1.5 rounded-full font-medium {% if current_user.plan == 'pro' %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-600{% endif %}">
+                {{ current_user.plan | upper }}
+            </span>
+            {% if current_user.plan == "free" %}
+            <form action="/billing/create-checkout-session" method="POST">
+                <button class="bg-brand-600 text-white text-sm px-4 py-2 rounded-lg font-medium hover:bg-brand-700 transition">
+                    Upgrade to Pro — $7/mo
+                </button>
+            </form>
+            {% else %}
+            <form action="/billing/portal" method="POST">
+                <button class="text-sm text-gray-600 hover:text-gray-900 border border-gray-300 px-4 py-2 rounded-lg">Manage Billing</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Usage -->
+    {% if plan == "free" %}
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 mb-8">
+        <h2 class="font-semibold text-gray-900 mb-3">Today's Usage</h2>
+        <div class="flex items-center gap-4">
+            <div class="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
+                <div class="bg-brand-600 h-full rounded-full transition-all" style="width: {{ (used_today / limit * 100) | int if limit else 0 }}%"></div>
+            </div>
+            <span class="text-sm font-medium text-gray-600 whitespace-nowrap">{{ used_today }} / {{ limit }}</span>
+        </div>
+        {% if used_today >= limit %}
+        <p class="text-sm text-orange-600 mt-3 font-medium">⚠️ You've hit your daily limit. Upgrade to Pro for unlimited access.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Quick Tools -->
+    <h2 class="font-semibold text-gray-900 mb-4">Quick Tools</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <a href="/tools/pdf-compress" class="bg-white rounded-xl border border-gray-200 p-4 hover:border-brand-300 hover:shadow transition text-center">
+            <div class="text-2xl mb-2">📄</div>
+            <span class="text-sm font-medium text-gray-700">Compress PDF</span>
+        </a>
+        <a href="/tools/pdf-merge" class="bg-white rounded-xl border border-gray-200 p-4 hover:border-brand-300 hover:shadow transition text-center">
+            <div class="text-2xl mb-2">📑</div>
+            <span class="text-sm font-medium text-gray-700">Merge PDF</span>
+        </a>
+        <a href="/tools/pdf-split" class="bg-white rounded-xl border border-gray-200 p-4 hover:border-brand-300 hover:shadow transition text-center">
+            <div class="text-2xl mb-2">✂️</div>
+            <span class="text-sm font-medium text-gray-700">Split PDF</span>
+        </a>
+        <a href="/tools/image-bg-remove" class="bg-white rounded-xl border border-gray-200 p-4 hover:border-brand-300 hover:shadow transition text-center">
+            <div class="text-2xl mb-2">🖼️</div>
+            <span class="text-sm font-medium text-gray-700">Remove BG</span>
+        </a>
+        <a href="/tools/image-convert" class="bg-white rounded-xl border border-gray-200 p-4 hover:border-brand-300 hover:shadow transition text-center">
+            <div class="text-2xl mb-2">🔄</div>
+            <span class="text-sm font-medium text-gray-700">Convert Image</span>
+        </a>
+        <a href="/tools/text-tools" class="bg-white rounded-xl border border-gray-200 p-4 hover:border-brand-300 hover:shadow transition text-center">
+            <div class="text-2xl mb-2">📝</div>
+            <span class="text-sm font-medium text-gray-700">Text Tools</span>
+        </a>
+    </div>
+</section>
+{% endblock %}

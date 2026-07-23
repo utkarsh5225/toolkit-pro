@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Merge PDF — ToolKit Pro{% endblock %}
+
+{% block content %}
+<section class="max-w-2xl mx-auto px-4 pt-8 pb-16">
+    <a href="/dashboard" class="text-sm text-brand-600 hover:underline mb-4 inline-block">← Back to Dashboard</a>
+    <h1 class="text-2xl font-bold text-gray-900 mb-2">Merge PDF</h1>
+    <p class="text-gray-500 mb-8">Combine multiple PDFs into a single document. Files are merged in the order you upload them.</p>
+
+    <div class="bg-white rounded-2xl border border-gray-200 p-8">
+        <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center hover:border-brand-400 transition cursor-pointer">
+            <div class="text-4xl mb-3">📑</div>
+            <p class="text-gray-600 font-medium">Drop PDF files here or click to browse</p>
+            <p class="text-sm text-gray-400 mt-1">Select 2+ files. Max 25MB each.</p>
+            <input type="file" id="fileInput" accept=".pdf" multiple class="hidden">
+        </div>
+        <div id="fileList" class="hidden mt-4 space-y-2"></div>
+        <button id="processBtn" class="hidden w-full mt-4 bg-brand-600 text-white py-3 rounded-xl font-semibold hover:bg-brand-700 transition disabled:opacity-50" disabled>
+            Merge PDFs
+        </button>
+        <div id="result" class="hidden mt-4 p-4 bg-green-50 rounded-xl text-sm"></div>
+        <div id="error" class="hidden mt-4 p-4 bg-red-50 rounded-xl text-sm text-red-700"></div>
+        <div id="limitWarning" class="hidden mt-4 p-4 bg-orange-50 rounded-xl text-sm"></div>
+    </div>
+</section>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+const processBtn = document.getElementById('processBtn');
+const result = document.getElementById('result');
+const error = document.getElementById('error');
+const limitWarning = document.getElementById('limitWarning');
+let files = [];
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('border-brand-400', 'bg-brand-50'); });
+dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('border-brand-400', 'bg-brand-50'); });
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('border-brand-400', 'bg-brand-50');
+    addFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', () => addFiles(fileInput.files));
+
+function addFiles(fileListInput) {
+    for (const f of fileListInput) {
+        if (f.type === 'application/pdf') files.push(f);
+    }
+    renderFileList();
+}
+
+function renderFileList() {
+    if (files.length === 0) { fileList.classList.add('hidden'); processBtn.classList.add('hidden'); return; }
+    fileList.classList.remove('hidden');
+    fileList.innerHTML = files.map((f, i) => `
+        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg text-sm">
+            <span>📄 ${f.name} <span class="text-gray-400">(${(f.size/1024).toFixed(0)} KB)</span></span>
+            <button onclick="removeFile(${i})" class="text-red-500 hover:text-red-700 text-xs">✕</button>
+        </div>
+    `).join('');
+    processBtn.classList.toggle('hidden', files.length < 2);
+    processBtn.disabled = files.length < 2;
+    result.classList.add('hidden');
+    error.classList.add('hidden');
+    limitWarning.classList.add('hidden');
+}
+
+function removeFile(i) { files.splice(i, 1); renderFileList(); }
+
+processBtn.addEventListener('click', async () => {
+    if (files.length < 2) return;
+    processBtn.disabled = true;
+    processBtn.textContent = 'Merging...';
+    result.classList.add('hidden');
+    error.classList.add('hidden');
+    limitWarning.classList.add('hidden');
+
+    const formData = new FormData();
+    files.forEach(f => formData.append('files', f));
+
+    try {
+        const res = await fetch('/tools/api/pdf-merge', { method: 'POST', body: formData });
+        if (res.status === 429) {
+            const data = await res.json();
+            limitWarning.innerHTML = `⚠️ ${data.message}`;
+            limitWarning.classList.remove('hidden');
+            processBtn.textContent = 'Limit Reached';
+            return;
+        }
+        if (!res.ok) { const data = await res.json(); showError(data.error || 'Failed to merge.'); return; }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        result.innerHTML = `✅ Done! <a href="${url}" download="merged.pdf" class="text-brand-600 font-medium underline">Download merged PDF</a>`;
+        result.classList.remove('hidden');
+        processBtn.textContent = 'Merge More';
+    } catch (e) { showError('Network error. Please try again.'); }
+    processBtn.disabled = false;
+});
+
+function showError(msg) { error.textContent = msg; error.classList.remove('hidden'); }
+</script>
+{% endblock %}

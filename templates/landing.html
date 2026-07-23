@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}ToolKit Pro — Free Online PDF & Image Tools{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="max-w-4xl mx-auto px-4 pt-16 pb-12 text-center">
+    <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 leading-tight">
+        Free PDF & Image Tools.<br>
+        <span class="text-brand-600">No ads. No bloat. Just works.</span>
+    </h1>
+    <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+        Compress PDFs, merge documents, remove image backgrounds, convert formats — all from your browser. 
+        5 free operations per day, unlimited with Pro.
+    </p>
+    <div class="flex flex-wrap justify-center gap-4">
+        <a href="/auth/signup" class="bg-brand-600 text-white px-8 py-3 rounded-xl text-lg font-semibold hover:bg-brand-700 transition shadow-lg shadow-brand-200">
+            Get Started Free →
+        </a>
+        <a href="/tools/pdf-compress" class="bg-white text-gray-700 px-8 py-3 rounded-xl text-lg font-semibold border border-gray-300 hover:border-brand-500 transition">
+            Try a Tool
+        </a>
+    </div>
+</section>
+
+<!-- Tool Grid -->
+<section class="max-w-5xl mx-auto px-4 pb-16">
+    <h2 class="text-2xl font-bold text-gray-900 text-center mb-10">All Tools</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- PDF Compress -->
+        <a href="/tools/pdf-compress" class="group bg-white rounded-2xl p-6 border border-gray-200 hover:border-brand-300 hover:shadow-lg transition">
+            <div class="text-3xl mb-3">📄</div>
+            <h3 class="font-semibold text-gray-900 group-hover:text-brand-600 transition">Compress PDF</h3>
+            <p class="text-sm text-gray-500 mt-1">Reduce file size without losing quality.</p>
+        </a>
+        <!-- PDF Merge -->
+        <a href="/tools/pdf-merge" class="group bg-white rounded-2xl p-6 border border-gray-200 hover:border-brand-300 hover:shadow-lg transition">
+            <div class="text-3xl mb-3">📑</div>
+            <h3 class="font-semibold text-gray-900 group-hover:text-brand-600 transition">Merge PDF</h3>
+            <p class="text-sm text-gray-500 mt-1">Combine multiple PDFs into one document.</p>
+        </a>
+        <!-- PDF Split -->
+        <a href="/tools/pdf-split" class="group bg-white rounded-2xl p-6 border border-gray-200 hover:border-brand-300 hover:shadow-lg transition">
+            <div class="text-3xl mb-3">✂️</div>
+            <h3 class="font-semibold text-gray-900 group-hover:text-brand-600 transition">Split PDF</h3>
+            <p class="text-sm text-gray-500 mt-1">Extract specific pages from a PDF.</p>
+        </a>
+        <!-- Image BG Remove -->
+        <a href="/tools/image-bg-remove" class="group bg-white rounded-2xl p-6 border border-gray-200 hover:border-brand-300 hover:shadow-lg transition">
+            <div class="text-3xl mb-3">🖼️</div>
+            <h3 class="font-semibold text-gray-900 group-hover:text-brand-600 transition">Remove Background</h3>
+            <p class="text-sm text-gray-500 mt-1">AI-powered background removal for images.</p>
+        </a>
+        <!-- Image Convert -->
+        <a href="/tools/image-convert" class="group bg-white rounded-2xl p-6 border border-gray-200 hover:border-brand-300 hover:shadow-lg transition">
+            <div class="text-3xl mb-3">🔄</div>
+            <h3 class="font-semibold text-gray-900 group-hover:text-brand-600 transition">Convert Image</h3>
+            <p class="text-sm text-gray-500 mt-1">PNG ↔ JPG ↔ WebP format conversion.</p>
+        </a>
+        <!-- Text Tools -->
+        <a href="/tools/text-tools" class="group bg-white rounded-2xl p-6 border border-gray-200 hover:border-brand-300 hover:shadow-lg transition">
+            <div class="text-3xl mb-3">📝</div>
+            <h3 class="font-semibold text-gray-900 group-hover:text-brand-600 transition">Text Tools</h3>
+            <p class="text-sm text-gray-500 mt-1">Word counter, case converter, formatter.</p>
+        </a>
+    </div>
+</section>
+
+<!-- Why Section -->
+<section class="bg-white border-y border-gray-200 py-16">
+    <div class="max-w-5xl mx-auto px-4 text-center">
+        <h2 class="text-2xl font-bold text-gray-900 mb-8">Why ToolKit Pro?</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div>
+                <div class="text-3xl mb-3">⚡</div>
+                <h3 class="font-semibold text-gray-900 mb-2">Lightning Fast</h3>
+                <p class="text-sm text-gray-500">Process files instantly. No upload queues. No waiting.</p>
+            </div>
+            <div>
+                <div class="text-3xl mb-3">🔒</div>
+                <h3 class="font-semibold text-gray-900 mb-2">Private & Secure</h3>
+                <p class="text-sm text-gray-500">Files are processed in memory. Nothing stored on disk. Auto-deleted.</p>
+            </div>
+            <div>
+                <div class="text-3xl mb-3">🎯</div>
+                <h3 class="font-semibold text-gray-900 mb-2">No Bloat, No Ads</h3>
+                <p class="text-sm text-gray-500">Just tools that work. No popups, no banners, no dark patterns.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="py-16 text-center px-4">
+    <h2 class="text-2xl font-bold text-gray-900 mb-4">Ready to stop fighting with bloated tools?</h2>
+    <p class="text-gray-600 mb-6">5 free tools every day. Unlimited for $7/month.</p>
+    <a href="/auth/signup" class="bg-brand-600 text-white px-8 py-3 rounded-xl text-lg font-semibold hover:bg-brand-700 transition shadow-lg shadow-brand-200 inline-block">
+        Start Free →
+    </a>
+</section>
+{% endblock %}
