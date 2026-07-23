@@ -3,50 +3,51 @@
 
 {% block content %}
 <section class="max-w-4xl mx-auto px-4 pt-16 pb-16">
-    <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 text-center mb-4">Simple, Transparent Pricing</h1>
-    <p class="text-gray-600 text-center mb-12">Start free. Upgrade when you need more.</p>
+    <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 text-center mb-4 dark:text-white">Simple, Transparent Pricing</h1>
+    <p class="text-gray-600 text-center mb-12 dark:text-slate-400">Start free. Upgrade when you need more.</p>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
-        <!-- Free -->
-        <div class="bg-white rounded-2xl border border-gray-200 p-8">
-            <h3 class="text-xl font-bold text-gray-900 mb-2">Free</h3>
-            <div class="text-4xl font-extrabold text-gray-900 mb-4">$0<span class="text-lg font-normal text-gray-500">/month</span></div>
-            <ul class="space-y-3 text-sm text-gray-600 mb-8">
+        <div class="bg-white rounded-2xl border border-gray-200 p-8 dark:bg-slate-800 dark:border-slate-700">
+            <h3 class="text-xl font-bold text-gray-900 mb-2 dark:text-white">Free</h3>
+            <div class="text-4xl font-extrabold text-gray-900 mb-4 dark:text-white">$0<span class="text-lg font-normal text-gray-500">/month</span></div>
+            <ul class="space-y-3 text-sm text-gray-600 mb-8 dark:text-slate-400">
                 <li>✅ 5 operations per day</li>
-                <li>✅ All 6 tools included</li>
+                <li>✅ All tools included</li>
                 <li>✅ No ads, no watermarks</li>
-                <li>✅ Fast, private processing</li>
+                <li>✅ Private processing</li>
             </ul>
             {% if not current_user.is_authenticated %}
             <a href="/auth/signup" class="block text-center bg-gray-900 text-white py-3 rounded-xl font-medium hover:bg-gray-800 transition">Get Started</a>
             {% elif current_user.plan == "free" %}
-            <div class="text-center text-sm text-gray-400 py-3 bg-gray-50 rounded-xl">Current plan</div>
+            <div class="text-center text-sm text-gray-400 py-3 bg-gray-50 rounded-xl dark:bg-slate-700 dark:text-slate-400">Current plan</div>
             {% endif %}
         </div>
 
-        <!-- Pro -->
         <div class="bg-brand-600 rounded-2xl p-8 text-white relative ring-4 ring-brand-200">
             <div class="absolute -top-3 right-6 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full">BEST VALUE</div>
             <h3 class="text-xl font-bold mb-2">Pro</h3>
             <div class="text-4xl font-extrabold mb-4">$7<span class="text-lg font-normal text-brand-100">/month</span></div>
             <ul class="space-y-3 text-sm text-brand-50 mb-8">
                 <li>✅ Unlimited operations</li>
-                <li>✅ All 6 tools + new tools first</li>
+                <li>✅ All tools + new tools first</li>
+                <li>✅ File history</li>
+                <li>✅ API access</li>
                 <li>✅ Priority processing</li>
                 <li>✅ Cancel anytime</li>
             </ul>
             {% if current_user.is_authenticated and current_user.plan == "pro" %}
-            <div class="text-center text-sm text-white py-3 bg-brand-700 rounded-xl">Current plan</div>
+            <form action="/billing/portal" method="POST">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                <button class="block w-full text-center bg-white text-brand-600 py-3 rounded-xl font-bold hover:bg-brand-50 transition">Manage Billing</button>
+            </form>
             {% else %}
             <form action="/billing/create-checkout-session" method="POST">
-                <button class="block w-full text-center bg-white text-brand-600 py-3 rounded-xl font-bold hover:bg-brand-50 transition">
-                    Upgrade to Pro
-                </button>
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                <button class="block w-full text-center bg-white text-brand-600 py-3 rounded-xl font-bold hover:bg-brand-50 transition">Upgrade to Pro</button>
             </form>
             {% endif %}
         </div>
     </div>
-
-    <p class="text-center text-xs text-gray-400 mt-8">All prices in USD. Cancel anytime from your dashboard.</p>
+    <p class="text-center text-xs text-gray-400 mt-8">All prices in USD. Cancel anytime.</p>
 </section>
 {% endblock %}

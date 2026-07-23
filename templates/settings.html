@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Settings — ToolKit Pro{% endblock %}
+
+{% block content %}
+<section class="max-w-2xl mx-auto px-4 pt-8 pb-16">
+    <a href="/dashboard" class="text-sm text-brand-600 hover:underline mb-4 inline-block">← Back to Dashboard</a>
+    <h1 class="text-2xl font-bold text-gray-900 mb-8 dark:text-white">Settings</h1>
+
+    <!-- Email -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 mb-6 dark:bg-slate-800 dark:border-slate-700">
+        <h2 class="font-semibold text-gray-900 mb-4 dark:text-white">Email</h2>
+        <form method="POST" action="/settings/profile">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <input type="email" name="email" value="{{ current_user.email }}" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 mb-3 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+            <button class="bg-brand-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-700">Update Email</button>
+        </form>
+    </div>
+
+    <!-- Password -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 mb-6 dark:bg-slate-800 dark:border-slate-700">
+        <h2 class="font-semibold text-gray-900 mb-4 dark:text-white">Change Password</h2>
+        <form method="POST" action="/settings/password">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <input type="password" name="current_password" placeholder="Current password" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 mb-3 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+            <input type="password" name="new_password" placeholder="New password (min 8 chars)" required class="w-full border border-gray-300 rounded-lg px-4 py-2.5 mb-3 dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+            <button class="bg-brand-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-700">Change Password</button>
+        </form>
+    </div>
+
+    <!-- Dark Mode -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 mb-6 dark:bg-slate-800 dark:border-slate-700">
+        <h2 class="font-semibold text-gray-900 mb-4 dark:text-white">Appearance</h2>
+        <button onclick="toggleDarkMode()" class="bg-gray-100 px-6 py-2 rounded-lg text-sm font-medium hover:bg-gray-200 dark:bg-slate-700 dark:text-white">
+            <span id="dm-label">{{ '☀️ Light Mode' if current_user.dark_mode else '🌙 Dark Mode' }}</span>
+        </button>
+    </div>
+
+    <!-- API Key (Pro only) -->
+    {% if current_user.plan == 'pro' %}
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 mb-6 dark:bg-slate-800 dark:border-slate-700">
+        <h2 class="font-semibold text-gray-900 mb-4 dark:text-white">API Key</h2>
+        {% if current_user.api_key %}
+        <div class="flex items-center gap-2">
+            <code class="bg-gray-100 px-3 py-2 rounded text-xs break-all dark:bg-slate-700 dark:text-slate-300">{{ current_user.api_key }}</code>
+            <button onclick="navigator.clipboard.writeText('{{ current_user.api_key }}')" class="text-sm text-brand-600">Copy</button>
+        </div>
+        {% else %}
+        <form method="POST" action="/settings/generate-key">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <button class="bg-brand-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-brand-700">Generate API Key</button>
+        </form>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Danger Zone -->
+    <div class="bg-white rounded-2xl border border-red-200 p-6 dark:bg-slate-800 dark:border-red-900">
+        <h2 class="font-semibold text-red-700 mb-4 dark:text-red-400">Danger Zone</h2>
+        <form method="POST" action="/settings/delete" onsubmit="return confirm('Delete your account? This cannot be undone.')">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+            <input type="password" name="confirm_password" placeholder="Enter password to confirm" required class="w-full border border-red-300 rounded-lg px-4 py-2.5 mb-3 dark:bg-slate-700 dark:border-red-800 dark:text-white">
+            <button class="bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-red-700">Delete Account</button>
+        </form>
+    </div>
+</section>
+
+<script>
+function toggleDarkMode() {
+    const isDark = document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    document.getElementById('dm-label').textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+    // Save to server
+    fetch('/settings/toggle-dark', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRF-Token': '{{ csrf_token }}'
+        },
+        body: '_csrf_token={{ csrf_token }}'
+    });
+}
+</script>
+{% endblock %}
