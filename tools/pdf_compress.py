@@ -43,14 +43,15 @@ def compress_pdf(data: bytes, filename: str = "", quality: int = 50) -> bytes | 
     80-100% → /screen   (72dpi, maximum compression)
     """
     try:
+        # Always use Ghostscript if available — it's the only real compressor
         gs = _find_gs()
         if gs:
             preset = _quality_to_preset(quality)
             result = _gs_compress(gs, data, preset)
-            if result and len(result) < len(data):
+            if result:
                 return result
 
-        # PyPDF2 fallback if no GS or GS enlarged
+        # PyPDF2 fallback if no GS or GS failed entirely
         reader = PdfReader(io.BytesIO(data))
         writer = PdfWriter()
 
@@ -61,11 +62,7 @@ def compress_pdf(data: bytes, filename: str = "", quality: int = 50) -> bytes | 
         writer.add_metadata({})
         output = io.BytesIO()
         writer.write(output)
-        result = output.getvalue()
-
-        if len(result) >= len(data):
-            return _clone_compress(data)
-        return result
+        return output.getvalue()
 
     except Exception as e:
         print(f"PDF compress error: {e}")
