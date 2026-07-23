@@ -135,18 +135,19 @@ def pdf_compress():
     if not validate_pdf(data):
         return jsonify({"error": "invalid_file", "message": "Not a valid PDF."}), 400
     
-    level = request.form.get("level", "medium")
-    if level not in ("low", "medium", "high"):
-        level = "medium"
+    try:
+        quality = int(request.form.get("quality", 50))
+        quality = max(0, min(100, quality))
+    except (ValueError, TypeError):
+        quality = 50
     
-    result = compress_pdf(data, fname, level=level)
+    result = compress_pdf(data, fname, quality=quality)
     if result is None:
         return jsonify({"error": "processing_failed"}), 500
     
     increment_usage()
-    suffix = {"low": "_lite", "medium": "_compressed", "high": "_max"}[level]
     return send_file(io.BytesIO(result), mimetype="application/pdf",
-                     as_attachment=True, download_name=f"{suffix}_{fname}")
+                     as_attachment=True, download_name=f"compressed_{fname}")
 
 @tools_bp.route("/api/pdf-merge", methods=["POST"])
 @login_required

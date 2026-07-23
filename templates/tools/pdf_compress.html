@@ -17,27 +17,17 @@
         </div>
         <div id="fileInfo" class="hidden mt-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-700 dark:bg-slate-700 dark:text-slate-300"></div>
 
-        <!-- Compression Level -->
-        <div id="levelSelect" class="hidden mt-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2 dark:text-slate-300">Compression Level</label>
-            <div class="grid grid-cols-3 gap-3" id="levelCards">
-                <div class="level-card cursor-pointer border-2 border-gray-200 rounded-xl p-3 text-center hover:border-brand-300 transition dark:border-slate-600" data-level="low">
-                    <div class="font-semibold text-gray-900 text-sm dark:text-white">Low</div>
-                    <div class="text-xs text-gray-400 mt-1 dark:text-slate-500">Lossless</div>
-                    <div class="text-xs text-gray-500 mt-0.5 dark:text-slate-400">~10-20% smaller</div>
-                </div>
-                <div class="level-card cursor-pointer border-2 border-brand-500 bg-brand-50 rounded-xl p-3 text-center transition dark:bg-brand-900/30" data-level="medium">
-                    <div class="font-semibold text-gray-900 text-sm dark:text-white">Medium</div>
-                    <div class="text-xs text-gray-400 mt-1 dark:text-slate-500">Recommended</div>
-                    <div class="text-xs text-gray-500 mt-0.5 dark:text-slate-400">~30-50% smaller</div>
-                </div>
-                <div class="level-card cursor-pointer border-2 border-gray-200 rounded-xl p-3 text-center hover:border-brand-300 transition dark:border-slate-600" data-level="high">
-                    <div class="font-semibold text-gray-900 text-sm dark:text-white">Maximum</div>
-                    <div class="text-xs text-gray-400 mt-1 dark:text-slate-500">Lossy</div>
-                    <div class="text-xs text-gray-500 mt-0.5 dark:text-slate-400">~50-80% smaller</div>
-                </div>
+        <!-- Quality Slider -->
+        <div id="qualitySection" class="hidden mt-6">
+            <div class="flex items-center justify-between mb-2">
+                <label class="text-sm font-medium text-gray-700 dark:text-slate-300">Compression Level</label>
+                <span id="qualityLabel" class="text-sm font-bold text-brand-600">50% — Balanced</span>
             </div>
-            <input type="hidden" id="selectedLevel" value="medium">
+            <input type="range" id="qualitySlider" min="0" max="100" value="50" step="1"
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-brand-600 dark:bg-slate-600">
+            <div class="flex justify-between text-xs text-gray-400 mt-1 px-1 dark:text-slate-500">
+                <span>Best Quality</span><span>Balanced</span><span>Smallest File</span>
+            </div>
         </div>
 
         <button id="processBtn" class="hidden w-full mt-4 bg-brand-600 text-white py-3 rounded-xl font-semibold hover:bg-brand-700 transition disabled:opacity-50" disabled>
@@ -50,29 +40,41 @@
 </section>
 
 <script>
-// Level selector
-const levelCards = document.querySelectorAll('.level-card');
-const selectedLevel = document.getElementById('selectedLevel');
-const SELECTED = ['border-brand-500', 'bg-brand-50', 'dark:bg-brand-900/30'];
-const UNSELECTED = ['border-gray-200', 'dark:border-slate-600'];
+// Quality slider
+const slider = document.getElementById('qualitySlider');
+const label = document.getElementById('qualityLabel');
+const labels = {
+    0:  "0% — Lossless (300dpi)",
+    10: "10% — Near-Lossless",
+    25: "25% — High Quality",
+    50: "50% — Balanced",
+    60: "60% — Good Compression",
+    75: "75% — High Compression",
+    85: "85% — Maximum (72dpi)",
+    100: "100% — Smallest File"
+};
 
-levelCards.forEach(card => {
-    card.addEventListener('click', () => {
-        levelCards.forEach(c => {
-            c.classList.remove(...SELECTED);
-            c.classList.add(...UNSELECTED);
-        });
-        card.classList.remove(...UNSELECTED);
-        card.classList.add(...SELECTED);
-        selectedLevel.value = card.dataset.level;
-    });
-});
+function updateLabel(val) {
+    // Find closest label key
+    const keys = Object.keys(labels).map(Number).sort((a,b) => a-b);
+    let best = keys[0];
+    for (const k of keys) {
+        if (val >= k) best = k;
+    }
+    label.textContent = labels[best] || `${val}%`;
+    // Color coding
+    if (val < 30) label.className = 'text-sm font-bold text-green-600';
+    else if (val < 70) label.className = 'text-sm font-bold text-brand-600';
+    else label.className = 'text-sm font-bold text-orange-500';
+}
+slider.addEventListener('input', () => updateLabel(parseInt(slider.value)));
+updateLabel(50);
 
 // File upload
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 const fileInfo = document.getElementById('fileInfo');
-const levelSelect = document.getElementById('levelSelect');
+const qualitySection = document.getElementById('qualitySection');
 const processBtn = document.getElementById('processBtn');
 const result = document.getElementById('result');
 const error = document.getElementById('error');
@@ -95,7 +97,7 @@ function handleFile(file) {
     selectedFile = file;
     fileInfo.innerHTML = `📄 <strong>${file.name}</strong> <span class="text-gray-400">(${(file.size / 1024).toFixed(0)} KB)</span>`;
     fileInfo.classList.remove('hidden');
-    levelSelect.classList.remove('hidden');
+    qualitySection.classList.remove('hidden');
     processBtn.classList.remove('hidden');
     processBtn.disabled = false;
     processBtn.textContent = 'Compress PDF';
@@ -114,7 +116,7 @@ processBtn.addEventListener('click', async () => {
 
     const formData = new FormData();
     formData.append('file', selectedFile);
-    formData.append('level', selectedLevel.value);
+    formData.append('quality', slider.value);
 
     try {
         const res = await fetch('/tools/api/pdf-compress', { method: 'POST', body: formData });

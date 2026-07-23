@@ -6,9 +6,18 @@ GS_PATHS = [
     r"C:\Program Files\gs\gs10.04.0\bin\gswin64c.exe",
     r"C:\Program Files\gs\gs10.03.0\bin\gswin64c.exe",
     r"C:\Program Files\gs\gs10.02.0\bin\gswin64c.exe",
-    r"C:\Program Files\gs\gs9.55.0\bin\gswin64c.exe",
     "gswin64c", "gs",
 ]
+
+# Quality → Ghostscript preset mapping
+# Higher % = more compression, lower quality
+QUALITY_PRESETS = {
+    (0, 20):   "prepress",   # ~300dpi, lossless
+    (21, 50):  "printer",    # ~300dpi, moderate
+    (51, 80):  "ebook",      # ~150dpi, good compression
+    (81, 100): "screen",     # ~72dpi, max compression
+}
+
 
 def _find_gs() -> str | None:
     for p in GS_PATHS:
@@ -17,66 +26,62 @@ def _find_gs() -> str | None:
     return None
 
 
-def compress_pdf(data: bytes, filename: str = "", level: str = "medium") -> bytes | None:
-    """Compress PDF at different levels.
+def _quality_to_preset(quality: int) -> str:
+    """Map percentage quality (0-100) to Ghostscript PDFSETTINGS."""
+    for (lo, hi), preset in QUALITY_PRESETS.items():
+        if lo <= quality <= hi:
+            return preset
+    return "ebook"  # default
 
-    Levels:
-      low    — content stream recompression (lossless, minimal)
-      medium — low + metadata strip + object dedup
-      high   — Ghostscript /ebook preset (maximum, lossy)
+
+def compress_pdf(data: bytes, filename: str = "", quality: int = 50) -> bytes | None:
+    """Compress PDF — quality slider 0-100 (higher = smaller file, lower quality).
+
+    0-20%  → /prepress  (300dpi, near-lossless)
+    20-50% → /printer   (300dpi, moderate)
+    50-80% → /ebook     (150dpi, good — default)
+    80-100% → /screen   (72dpi, maximum compression)
     """
     try:
-        # High: use Ghostscript for real compression
-        if level == "high":
-            gs = _find_gs()
-            if gs:
-                result = _gs_compress(gs, data)
-                if result and len(result) < len(data):
-                    return result
-            # Fall through to PyPDF2 if GS fails
+        gs = _find_gs()
+        if gs:
+            preset = _quality_to_preset(quality)
+            result = _gs_compress(gs, data, preset)
+            if result and len(result) < len(data):
+                return result
 
-        # Low & Medium: PyPDF2-based
+        # PyPDF2 fallback if no GS or GS enlarged
         reader = PdfReader(io.BytesIO(data))
         writer = PdfWriter()
 
         for page in reader.pages:
             page.compress_content_streams()
-            if level == "high":
-                _compress_page_images(page)
             writer.add_page(page)
 
-        if level in ("medium", "high"):
-            writer.add_metadata({})
-
+        writer.add_metadata({})
         output = io.BytesIO()
         writer.write(output)
         result = output.getvalue()
 
-        if len(result) >= len(data) and level != "low":
-            result = _clone_compress(data)
+        if len(result) >= len(data):
+            return _clone_compress(data)
+        return result
 
-        return result if len(result) < len(data) else _clone_compress(data)
     except Exception as e:
         print(f"PDF compress error: {e}")
         return None
 
 
-def _gs_compress(gs_path: str, data: bytes) -> bytes | None:
-    """Use Ghostscript to aggressively compress PDF. /ebook = 150dpi images."""
+def _gs_compress(gs_path: str, data: bytes, preset: str = "ebook") -> bytes | None:
+    """Ghostscript compression with given preset."""
     try:
         proc = subprocess.run(
             [gs_path, "-q", "-dNOPAUSE", "-dBATCH", "-dSAFER",
              "-sDEVICE=pdfwrite",
              "-dCompatibilityLevel=1.4",
-             "-dPDFSETTINGS=/ebook",
+             f"-dPDFSETTINGS=/{preset}",
              "-dEmbedAllFonts=true",
              "-dSubsetFonts=true",
-             "-dColorImageDownsampleType=/Bicubic",
-             "-dColorImageResolution=150",
-             "-dGrayImageDownsampleType=/Bicubic",
-             "-dGrayImageResolution=150",
-             "-dMonoImageDownsampleType=/Bicubic",
-             "-dMonoImageResolution=150",
              "-sOutputFile=%stdout", "-"],
             input=data, capture_output=True, timeout=60)
         if proc.returncode == 0 and proc.stdout:
@@ -90,37 +95,13 @@ def _clone_compress(data: bytes) -> bytes:
     """Fallback: clone and recompress all streams."""
     try:
         reader = PdfReader(io.BytesIO(data))
-        writer = PdfWriter(clone_from=reader)
-        for page in writer.pages:
+        writer = PdfWriter()
+        for page in reader.pages:
             page.compress_content_streams()
+            writer.add_page(page)
         writer.add_metadata({})
         out = io.BytesIO()
         writer.write(out)
         return out.getvalue()
     except Exception:
         return data
-
-
-def _compress_page_images(page):
-    """Downsample images (fallback when no Ghostscript)."""
-    try:
-        for img_key in list(page.images.keys()):
-            img = page.images[img_key]
-            if not hasattr(img, 'data') or not img.data:
-                continue
-            try:
-                pil_img = Image.open(io.BytesIO(img.data))
-                w, h = pil_img.size
-                if w > 1000 or h > 1000:
-                    r = 1000 / max(w, h)
-                    pil_img = pil_img.resize((int(w*r), int(h*r)), Image.LANCZOS)
-                if pil_img.mode in ("RGBA", "P", "LA"):
-                    pil_img = pil_img.convert("RGB")
-                out = io.BytesIO()
-                pil_img.save(out, format="JPEG", quality=40, optimize=True)
-                if len(out.getvalue()) < len(img.data):
-                    img.data = out.getvalue()
-            except Exception:
-                continue
-    except Exception:
-        pass
