@@ -28,19 +28,31 @@ def create_app():
     # ---- Rate Limiter ----
     limiter.init_app(app)
     
-    # ---- CSRF Protection ----
+    # ---- CSRF Protection (form submissions only, not API) ----
+    CSRF_PROTECTED_PREFIXES = ("/auth/", "/billing/create-checkout", "/billing/portal")
+    
     @app.before_request
     def csrf_protect():
-        if request.method in ("POST", "PUT", "DELETE", "PATCH"):
-            if request.path == "/billing/webhook":
-                return
-            token = session.get("_csrf_token")
-            if not token:
-                session["_csrf_token"] = secrets.token_hex(32)
-                return
-            form_token = request.form.get("_csrf_token") or request.headers.get("X-CSRF-Token")
-            if not form_token or not secrets.compare_digest(token, form_token):
-                return {"error": "CSRF validation failed"}, 403
+        # Only protect browser form POSTs, not API/file-upload endpoints
+        if request.method not in ("POST", "PUT", "DELETE", "PATCH"):
+            return
+        # Skip: Stripe webhooks, API endpoints, settings (dark mode toggle)
+        if request.path.startswith("/billing/webhook") or \
+           request.path.startswith("/tools/api/") or \
+           request.path.startswith("/settings/toggle-dark"):
+            return
+        # Only enforce CSRF on auth and billing forms
+        if not any(request.path.startswith(p) for p in CSRF_PROTECTED_PREFIXES) and \
+           not request.path == "/settings/delete":
+            return
+        
+        token = session.get("_csrf_token")
+        if not token:
+            session["_csrf_token"] = secrets.token_hex(32)
+            return
+        form_token = request.form.get("_csrf_token") or request.headers.get("X-CSRF-Token")
+        if not form_token or not secrets.compare_digest(token, form_token):
+            return {"error": "CSRF validation failed"}, 403
     
     @app.context_processor
     def inject_csrf():
