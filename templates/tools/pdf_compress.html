@@ -47,12 +47,14 @@ let fileSizeKB = 0;
 
 function getEstimatedSize(qualityPercent) {
     if (fileSizeKB === 0) return '';
-    // Rough size multipliers based on Ghostscript presets
+    // Smooth ratio: linear interpolation between presets
+    //  0% → 1.00   20% → 0.85   50% → 0.50   80% → 0.22   100% → 0.10
     let ratio;
-    if (qualityPercent <= 20)  ratio = 0.95;  // prepress
-    else if (qualityPercent <= 50)  ratio = 0.70;  // printer
-    else if (qualityPercent <= 80)  ratio = 0.40;  // ebook
-    else ratio = 0.20;  // screen
+    const q = qualityPercent;
+    if (q <= 20)       ratio = 1.0 - (q / 20) * 0.15;         // 1.00 → 0.85
+    else if (q <= 50)  ratio = 0.85 - ((q - 20) / 30) * 0.35; // 0.85 → 0.50
+    else if (q <= 80)  ratio = 0.50 - ((q - 50) / 30) * 0.28; // 0.50 → 0.22
+    else               ratio = 0.22 - ((q - 80) / 20) * 0.12; // 0.22 → 0.10
     const estimatedKB = Math.round(fileSizeKB * ratio);
     return `~${estimatedKB} KB`;
 }
