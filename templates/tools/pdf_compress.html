@@ -43,20 +43,24 @@
 // Quality slider
 const slider = document.getElementById('qualitySlider');
 const label = document.getElementById('qualityLabel');
+let fileSizeKB = 0;
 
-function getLabel(val) {
-    if (val <= 5)   return `${val}% — Lossless (300dpi)`;
-    if (val <= 25)  return `${val}% — Near-Lossless`;
-    if (val <= 45)  return `${val}% — High Quality`;
-    if (val <= 55)  return `${val}% — Balanced`;
-    if (val <= 70)  return `${val}% — Good Compression`;
-    if (val <= 85)  return `${val}% — High Compression`;
-    if (val <= 95)  return `${val}% — Maximum (72dpi)`;
-    return `${val}% — Smallest File`;
+function getEstimatedSize(qualityPercent) {
+    if (fileSizeKB === 0) return '';
+    // Rough size multipliers based on Ghostscript presets
+    let ratio;
+    if (qualityPercent <= 20)  ratio = 0.95;  // prepress
+    else if (qualityPercent <= 50)  ratio = 0.70;  // printer
+    else if (qualityPercent <= 80)  ratio = 0.40;  // ebook
+    else ratio = 0.20;  // screen
+    const estimatedKB = Math.round(fileSizeKB * ratio);
+    return `~${estimatedKB} KB`;
 }
 
 function updateLabel(val) {
-    label.textContent = getLabel(val);
+    const estimated = getEstimatedSize(val);
+    const suffix = estimated ? ` — ${estimated} expected` : '';
+    label.textContent = `${val}%${suffix}`;
     if (val < 30) label.className = 'text-sm font-bold text-green-600';
     else if (val < 70) label.className = 'text-sm font-bold text-brand-600';
     else label.className = 'text-sm font-bold text-orange-500';
@@ -89,7 +93,8 @@ function handleFile(file) {
     if (file.type !== 'application/pdf') { showError('Please upload a PDF file.'); return; }
     if (file.size > 50 * 1024 * 1024) { showError('File too large. Max 50MB.'); return; }
     selectedFile = file;
-    fileInfo.innerHTML = `📄 <strong>${file.name}</strong> <span class="text-gray-400">(${(file.size / 1024).toFixed(0)} KB)</span>`;
+    fileSizeKB = Math.round(file.size / 1024);
+    fileInfo.innerHTML = `📄 <strong>${file.name}</strong> <span class="text-gray-400">(${fileSizeKB} KB)</span>`;
     fileInfo.classList.remove('hidden');
     qualitySection.classList.remove('hidden');
     processBtn.classList.remove('hidden');
@@ -98,6 +103,7 @@ function handleFile(file) {
     result.classList.add('hidden');
     error.classList.add('hidden');
     limitWarning.classList.add('hidden');
+    updateLabel(parseInt(slider.value));
 }
 
 processBtn.addEventListener('click', async () => {
